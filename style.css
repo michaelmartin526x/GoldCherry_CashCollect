@@ -1,0 +1,98 @@
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#061b27;font-family:Arial,sans-serif}body{display:grid;place-items:center}#game{position:relative;width:min(100vw,56.25vh);aspect-ratio:720/1280;overflow:hidden;background:#075f7e;box-shadow:0 0 60px #0008}#bg{position:absolute;width:100%;height:100%;object-fit:cover}#logo{position:absolute;left:4%;top:2.5%;width:92%;height:auto}#reel-shell{position:absolute;left:1.4%;top:26%;width:97.2%;aspect-ratio:700/620}#reel-bg,#reel-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#reel-bg{z-index:0}#three{position:absolute;z-index:1;left:2.85%;top:3.2%;width:94.3%;height:93.55%;overflow:hidden}#reel-window{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);z-index:1;overflow:hidden}
+.reel-column{position:relative;overflow:hidden;height:100%}
+.reel-track{position:absolute;left:0;top:0;width:100%;height:150%;will-change:transform;transform:translateY(-16.6666667%)}
+.reel-track .reel-symbol{display:block;width:100%;height:16.6666667%;object-fit:contain;will-change:transform,opacity;backface-visibility:hidden}
+/* v0.6: blur is artwork-driven. No CSS blur/filter is applied. */
+.reel-column.running .reel-track .reel-symbol{transform:scaleY(1.025);opacity:.98}
+.reel-column.slow .reel-track .reel-symbol{transform:scaleY(1.006);opacity:1}
+.reel-column.settle{animation:reelColumnSettle .115s ease-out}
+/* Start at exactly zero so landing can never snap upward. Impact moves DOWN first, then a tiny rebound. */
+@keyframes reelColumnSettle{0%{transform:translateY(0)}34%{transform:translateY(.48%)}68%{transform:translateY(-.12%)}100%{transform:translateY(0)}}#fx-layer{position:absolute;inset:0;z-index:2;pointer-events:none}#fx-layer canvas{display:block;width:100%!important;height:100%!important}#reel-frame{z-index:2}#status{position:absolute;top:76.5%;left:50%;transform:translateX(-50%);font-weight:900;font-size:clamp(10px,2.2vw,20px);color:white;text-shadow:0 2px 4px #000;letter-spacing:.12em}#spin{position:absolute;top:78%;left:50%;transform:translateX(-50%);width:22%;aspect-ratio:1;border:0;background:transparent;padding:0;cursor:pointer;transition:.12s}#spin:hover{transform:translateX(-50%) scale(1.05)}#spin:active{transform:translateX(-50%) scale(.96)}#spin:disabled{filter:grayscale(.8);opacity:.65;cursor:default}#spin img{width:100%;height:100%;object-fit:contain}.spinning #spin img{animation:rot .65s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}#hud{position:absolute;left:14%;right:14%;bottom:4.4%;display:flex;justify-content:space-between;gap:5%}#hud>div{width:48%;height:58px;background:#050505;border-radius:16px;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:inset 0 0 0 2px #ffffff16}small{font-size:10px;color:#aaa}b{font-size:18px}#version{position:absolute;bottom:1%;width:100%;text-align:center;color:#ffffff80;font-size:9px;letter-spacing:.15em}
+
+
+#debug{position:fixed;right:12px;top:12px;width:min(360px,38vw);max-height:calc(100vh - 24px);overflow:auto;background:#061018ee;color:#d8f4ff;border:1px solid #4ac4ff55;border-radius:10px;padding:10px;z-index:50;box-shadow:0 8px 30px #0008}#debug-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:#7dd9ff;margin-bottom:8px}#debug pre{margin:0;white-space:pre-wrap;font:11px/1.42 Consolas,monospace}@media(max-width:900px){#debug{display:none}}
+/* v0.10 complete game loop */
+#free-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:0}
+#game.feature-mode #bg{opacity:0}#game.feature-mode #free-bg{opacity:1}#game.feature-mode #logo{filter:drop-shadow(0 4px 8px #0008)}
+.screen{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#066783;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .28s ease,visibility .28s}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto}.screen#feature-entry,.screen#feature-complete{background:#002d49d9;backdrop-filter:blur(2px)}
+.splash-character{position:absolute;width:94%;left:3%;top:14%;height:auto;animation:splashIn .65s cubic-bezier(.2,.85,.25,1.08)}
+.press-anywhere{position:absolute;width:76%;left:12%;bottom:8%;height:auto;animation:pulse 1.25s ease-in-out infinite}
+.feature-panel{width:92%;height:auto;filter:drop-shadow(0 12px 16px #0008);animation:panelIn .42s cubic-bezier(.2,.85,.25,1.08)}
+.feature-press{position:absolute;width:67%;left:16.5%;bottom:8%;height:auto;animation:pulse 1.25s ease-in-out infinite}
+.complete-wrap{position:relative;width:92%}.complete-wrap .feature-panel{width:100%}#feature-total{position:absolute;left:8%;right:8%;top:45%;text-align:center;color:#fff;font-weight:1000;font-size:clamp(42px,10vw,84px);text-shadow:0 6px 0 #000,0 9px 18px #0009;letter-spacing:.02em}
+#feature-hud{display:none;position:absolute;z-index:8;left:7%;right:7%;top:72.5%;justify-content:space-between;gap:4%;color:white;font-weight:900;text-shadow:0 2px 4px #000;font-size:clamp(10px,2vw,18px)}#game.feature-mode #feature-hud{display:flex}#game.feature-mode #status{top:75.2%}
+@keyframes pulse{50%{transform:scale(1.035);opacity:.78}}@keyframes panelIn{from{transform:scale(.72);opacity:0}to{transform:scale(1);opacity:1}}@keyframes splashIn{from{transform:translateY(-3%) scale(.92);opacity:0}to{transform:none;opacity:1}}
+/* v0.11: calm landing, accountancy bar, splash logo and genuine scatter anticipation */
+.reel-column.settle{animation:reelColumnSettleV11 .075s ease-out}
+@keyframes reelColumnSettleV11{0%{transform:translateY(0)}55%{transform:translateY(.16%)}100%{transform:translateY(0)}}
+.reel-column.anticipating{filter:drop-shadow(0 0 5px rgba(255,255,255,.22))}
+#account-bar{position:absolute;left:0;right:0;bottom:0;height:9.375%;z-index:6;color:#fff}
+#account-bar>img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.account{position:absolute;top:0;bottom:0;display:flex;align-items:center;gap:8px;z-index:1;white-space:nowrap}
+.account small{font-weight:800;font-size:clamp(9px,1.65vw,16px);color:#969696;letter-spacing:.02em}.account b{font-size:clamp(16px,3.2vw,30px);font-weight:900;color:#fff}
+.account.stake{left:2.2%;width:30%;justify-content:flex-start}.account.win{left:34%;width:32%;justify-content:center}.account.credit{right:2.2%;width:31%;justify-content:flex-end}
+#version{bottom:9.7%;opacity:.5}#hud{display:none}
+.splash-logo{position:absolute;width:82%;left:9%;top:2.5%;height:auto;z-index:2;filter:drop-shadow(0 8px 8px #0007);animation:logoIn .58s cubic-bezier(.2,.85,.25,1.08)}
+.splash-character{top:18%}.press-anywhere{bottom:10.5%}
+@keyframes logoIn{from{transform:translateY(-8%) scale(.88);opacity:0}to{transform:none;opacity:1}}
+
+/* v0.12: cleaner control layout */
+#status{top:75.9%;z-index:7;white-space:nowrap}
+#spin{top:79.2%;width:21%;z-index:7}
+.side-button{position:absolute;top:81.2%;width:13.5%;aspect-ratio:1;border:0;background:transparent;padding:0;cursor:pointer;z-index:7;transition:.12s}
+.side-button>img:first-child{width:100%;height:100%;object-fit:contain}
+#settings{left:20%}#autoplay{right:20%}
+.side-button:hover{transform:scale(1.05)}.side-button:active{transform:scale(.96)}
+#autoplay .autoplay-label{position:absolute;left:50%;top:88%;width:118%;height:auto;transform:translateX(-50%);pointer-events:none}
+#version{top:.45%;bottom:auto;right:.8%;width:auto;text-align:right;font-size:7px;opacity:.28;z-index:9}
+#game.feature-mode #status{top:75.2%}
+#autoplay.active{filter:brightness(1.18);transform:scale(.97)}
+/* v0.19 Spine presentation: PNGs remain the reel renderer; landed cells hand off to the Three.js Spine layer. */
+/* PNG/Spine handoff is atomic after a rendered Spine frame. A CSS opacity fade
+   would overlap two different poses at landing and briefly ghost the symbol. */
+.reel-track .reel-symbol{transition:none}
+
+/* v0.19.9 splash artwork refresh */
+#splash{background:#000;justify-content:flex-start;overflow:hidden}
+#splash .splash-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+#splash .splash-info-01{position:absolute;left:3.6%;top:4.725%;width:46%;height:auto;z-index:2}
+#splash .press-anywhere{position:absolute;left:13.5%;bottom:11.1%;width:73%;height:auto;z-index:2;animation:pulse 1.25s ease-in-out infinite}
+#splash .splash-info-02{position:absolute;left:3.9%;bottom:1.8%;width:92.2%;height:auto;z-index:2}
+/* v0.20.1 splash logo placement from SplashExample reference */
+#splash .splash-game-logo{position:absolute;left:8.5%;top:50.16875%;width:83%;height:auto;z-index:2;filter:drop-shadow(0 7px 7px #0007)}
+
+#settings-dialog{background:#062e40;color:#fff;border:1px solid #76d4ff;border-radius:14px;padding:24px;max-width:90vw}#settings-dialog::backdrop{background:#0009}#settings-dialog label{display:block;margin:18px 0}#settings-dialog button,#debug-feature{padding:9px 14px;cursor:pointer}#debug[hidden]{display:none!important}#debug-feature{margin-bottom:10px}
+/* Account text follows the portrait game width, including short desktop windows. */
+#game{container-type:inline-size}
+.account{gap:clamp(2px,1cqw,8px)}
+.account small{font-size:clamp(7px,2.2cqw,16px)}
+.account b{font-size:clamp(12px,4.4cqw,30px)}
+/* Gold Cherry layout follows Layout_example.psd (720 × 1280). */
+html,body{background:#190009}#game{background:#330014}
+#logo{left:12.15%;top:1.5%;width:75.7%;z-index:4}
+#wheel-shell{position:absolute;left:0;top:11.7%;width:100%;aspect-ratio:1;z-index:1}
+#wheel-rotor,#wheel-blur{position:absolute;left:7.64%;top:7.64%;width:84.72%;height:84.72%;border-radius:50%}
+#wheel-blur{opacity:0;pointer-events:none}
+#wheel-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#wheel-pointer{position:absolute;left:46.945%;top:-.5%;width:6.11%;height:auto;z-index:3}
+#reel-shell{left:0;top:27.3%;width:100%;aspect-ratio:720/687;z-index:3}
+#reel-bg{left:1.39%;top:4.66%;width:97.22%;height:90.25%}
+#three{left:4.17%;top:7.57%;width:91.67%;height:84.43%}
+#reel-frame{z-index:2}
+#status{font-size:clamp(9px,2.8cqw,20px);top:76%;letter-spacing:.04em}
+#spin{top:79.4%;width:21.8%}.side-button{top:84.2%;width:13.2%}#settings{left:21.5%}#autoplay{right:21.5%}
+#account-bar{background:#000;height:7.4%}
+#feature-hud{top:73.9%;font-size:clamp(9px,2.5cqw,18px)}
+#splash .splash-game-logo{top:26%;left:12.15%;width:75.7%}
+#splash .splash-info-01{top:44%;left:27%;width:46%}
+#splash .splash-info-02{bottom:2%;left:3.9%;width:92.2%}
+#collect-target{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:24;background:#21000de8;border:2px solid #ffd56b;border-radius:16px;padding:12px 20px;color:#ffe396;font-size:clamp(20px,6cqw,42px);font-weight:900;box-shadow:0 0 25px #ffc40066}
+#collect-target[hidden]{display:none}.collect-fly{position:absolute;z-index:23;pointer-events:none}
+#startup-error{position:fixed;inset:20%;z-index:100;background:#260014;color:#fff;padding:24px;border:2px solid #ffd56b;overflow:auto}
+#settings-dialog{background:#340015;border-color:#ffd56b}
+.screen#feature-entry,.screen#feature-complete{background:#21000dd9}
+/* The revised artwork uses calm landings; remove the inherited reel-column bob. */
+.reel-column.settle{animation:none}
+.prototype-note{position:absolute;left:10%;top:45%;width:80%;text-align:center;color:#ffe397;font-weight:900;font-size:clamp(15px,4cqw,28px);line-height:1.6;z-index:2;text-shadow:0 3px 5px #000}
+#debug label{display:block;margin:8px 0;font-size:12px}#debug-mode{display:block;width:100%;margin:6px 0}#debug-mode-spin{padding:8px;margin-bottom:8px}
