@@ -75,7 +75,7 @@ html,body{background:#190009}#game{background:#330014}
 #wheel-rotor,#wheel-blur{position:absolute;left:7.64%;top:7.64%;width:84.72%;height:84.72%;border-radius:50%}
 #wheel-blur{opacity:0;pointer-events:none}
 #wheel-frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-#wheel-pointer{position:absolute;left:46.945%;top:-.5%;width:6.11%;height:auto;z-index:3}
+#wheel-pointer{position:absolute;left:46.945%;top:4.0%;width:6.11%;height:auto;z-index:3;transform-origin:50% 12%}
 #reel-shell{left:0;top:27.3%;width:100%;aspect-ratio:720/687;z-index:3}
 #reel-bg{left:1.39%;top:4.66%;width:97.22%;height:90.25%}
 #three{left:4.17%;top:7.57%;width:91.67%;height:84.43%}

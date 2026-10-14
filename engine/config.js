@@ -1,7 +1,8 @@
 import script from './script-data.js';
 export const MODES=script.baseWeights;
 export const FEATURE_MODES=script.featureWeights;
-export const MODE_RULES=script.modes;
+// Design correction: D is scatter entry only; keep the supplied source script intact.
+export const MODE_RULES={...script.modes,D:{...script.modes.D,wild:false,collect:false,lines:false,trigger:true},FD:{...script.modes.FD,prizeMultiplier:2}};
 export const FREE_SPIN_AWARDS=script.freeSpins;
 export const paylines=script.paylines;
 export const pay=script.pay;

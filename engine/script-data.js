@@ -292,25 +292,29 @@ export default {
   "baseWeights": [
     [
       "A",
-      300
+      3000
     ],
     [
       "B",
-      590
+      6100
     ],
     [
       "C",
-      100
+      799
     ],
     [
       "D",
-      10
+      100
+    ],
+    [
+      "E",
+      1
     ]
   ],
   "featureWeights": [
     [
       "FA",
-      600
+      500
     ],
     [
       "FB",
@@ -319,6 +323,10 @@ export default {
     [
       "FC",
       200
+    ],
+    [
+      "FD",
+      100
     ]
   ],
   "modes": {
@@ -346,6 +354,12 @@ export default {
       "collect": true,
       "trigger": true
     },
+    "E": {
+      "wild": false,
+      "lines": true,
+      "collect": true,
+      "trigger": true
+    },
     "FA": {
       "wild": false,
       "lines": true,
@@ -363,11 +377,17 @@ export default {
       "lines": false,
       "collect": false,
       "trigger": false
+    },
+    "FD": {
+      "wild": false,
+      "lines": true,
+      "collect": true,
+      "trigger": false
     }
   },
   "freeSpins": {
-    "3": 3,
-    "4": 5
+    "3": 5,
+    "4": 8
   },
   "declaredRtp": 94.1104
 };

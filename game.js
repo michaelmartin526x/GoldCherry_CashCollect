@@ -34,7 +34,7 @@ const {matrixFromStops}=engine.rules;
 
 const audioManager=new AudioManager();
 
-const wheel=createWheel({rotor:document.querySelector('#wheel-rotor')});
+const wheel=createWheel({rotor:document.querySelector('#wheel-rotor'),ticker:document.querySelector('#wheel-pointer')});
 
 const reelSprites=await loadReelSprites(SPINE_SYMBOLS,{blurSymbols:BLUR_SYMBOLS});
 

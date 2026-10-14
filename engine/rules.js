@@ -24,15 +24,17 @@ function evaluate(mode,matrix){
     if(GEM_SYMBOLS.has(s))gems.push({symbol:s,value:GEM_VALUES[s],position:[c,r]});
   }
   const lineMatrix=rule.wild?transformGemsToWild(matrix):matrix;
-  const lineResult=rule.lines?evaluateLines(lineMatrix):{total:0,wins:[]};
-  const collectorAmount=rule.collect?gems.reduce((sum,g)=>sum+g.value,0):0;
+  const prizeMultiplier=rule.prizeMultiplier||1;
+  const rawLines=rule.lines?evaluateLines(lineMatrix):{total:0,wins:[]};
+  const lineResult={total:rawLines.total*prizeMultiplier,wins:rawLines.wins.map(win=>({...win,amount:win.amount*prizeMultiplier}))};
+  const collectorAmount=rule.collect?gems.reduce((sum,g)=>sum+g.value,0)*prizeMultiplier:0;
   const scatterCount=rule.trigger?scatter(matrix):0;
   const awardCount=Object.keys(FREE_SPIN_AWARDS).map(Number).filter(count=>scatterCount>=count).sort((a,b)=>b-a)[0];
   const freeSpins=awardCount?FREE_SPIN_AWARDS[awardCount]:0;
   return {mode,lineMatrix,lineWins:lineResult.wins,lineWin:lineResult.total,gems,wPositions,
-    collectorActive:rule.collect&&gems.length>0,collectorMultiplier:rule.collect?1:0,
+    collectorActive:rule.collect&&gems.length>0,prizeMultiplier,collectorMultiplier:rule.collect?prizeMultiplier:0,
     collectorAmount,scatterCount,freeSpins,wildActive:rule.wild,
-    wheelKind:rule.wild?'wild':mode==='D'?'feature':rule.collect?'collect':'blank',
+    wheelKind:mode==='FD'?'double':rule.wild?'wild':mode==='D'?'feature':rule.collect?'collect':'blank',
     totalWin:lineResult.total+collectorAmount};
 }
 export const evaluateSpin=(mode,m)=>{if(!MODES.some(([name])=>name===mode))throw new Error('Invalid base mode');return evaluate(mode,m);};

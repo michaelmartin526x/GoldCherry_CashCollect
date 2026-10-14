@@ -3,6 +3,19 @@ import * as spine from 'spine-threejs';
 import { SPINE_SYMBOLS, GEM_SYMBOLS as CASH_SYMBOLS, LAYOUT } from '../engine/config.js';
 import { loadSkeletons } from './load-skeletons.js';
 
+function focusMaterial(parameters){
+  const material=new THREE.MeshBasicMaterial(parameters);
+  material.userData.desaturation={value:0};
+  material.onBeforeCompile=shader=>{
+    shader.uniforms.focusDesaturation=material.userData.desaturation;
+    shader.fragmentShader='uniform float focusDesaturation;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>',
+      'outgoingLight = mix(outgoingLight, vec3(dot(outgoingLight, vec3(0.2126, 0.7152, 0.0722))), focusDesaturation);\n#include <opaque_fragment>');
+  };
+  material.customProgramCacheKey=()=> 'symbol-win-focus-grayscale';
+  return material;
+}
+
 export function createSpinePresentation({scene, slots, getMatrix}) {
 const landingImages=new Map();
 let spinImages=new Map();
@@ -98,7 +111,7 @@ class SpineSymbolManager{
   }
   makeDataMesh(skeletonData,c,r,z=-0.0002){
     let mesh;
-    try{mesh=new spine.SkeletonMesh({skeletonData,twoColorTint:false,materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return new THREE.MeshBasicMaterial(parameters)}})}
+    try{mesh=new spine.SkeletonMesh({skeletonData,twoColorTint:false,materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return focusMaterial(parameters)}})}
     catch(_){mesh=new spine.SkeletonMesh(skeletonData,(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true})}
     mesh.position.set(-VIEW_W/2+LAYOUT.cellWidth/2+c*LAYOUT.cellWidth,VIEW_H/2-LAYOUT.cellHeight/2-r*LAYOUT.cellHeight,z);mesh.zOffset=z;mesh.visible=true;scene.add(mesh);return mesh;
   }
@@ -109,7 +122,7 @@ class SpineSymbolManager{
       mesh=new spine.SkeletonMesh({
         skeletonData,
         twoColorTint:false,
-        materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return new THREE.MeshBasicMaterial(parameters)}
+        materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return focusMaterial(parameters)}
       });
     }catch(_){
       // Compatibility path for older 4.3 patch APIs.
@@ -190,7 +203,7 @@ class SpineSymbolManager{
     try{
       this.stopAnticipationFx();
       let mesh;
-      try{mesh=new spine.SkeletonMesh({skeletonData:this.fxData,twoColorTint:false,materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return new THREE.MeshBasicMaterial(parameters)}})}
+      try{mesh=new spine.SkeletonMesh({skeletonData:this.fxData,twoColorTint:false,materialFactory:(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true;return focusMaterial(parameters)}})}
       catch(_){mesh=new spine.SkeletonMesh(this.fxData,(parameters)=>{parameters.depthTest=false;parameters.depthWrite=false;parameters.transparent=true})}
       // Authored FX is ~205x600 and intentionally overlaps the reel edges vertically.
       mesh.position.set(-VIEW_W/2+LAYOUT.cellWidth/2+c*LAYOUT.cellWidth,0,0); mesh.renderOrder=60; mesh.zOffset=.002; mesh.visible=true;
@@ -208,12 +221,17 @@ class SpineSymbolManager{
     if(!cell?.mesh?.skeleton?.color)return;
     const v=Math.max(0,Math.min(1,value));
     cell.mesh.skeleton.color.r=v;cell.mesh.skeleton.color.g=v;cell.mesh.skeleton.color.b=v;
+    for(const mesh of [cell.mesh,cell.backMesh])mesh?.traverse(child=>{
+      for(const material of Array.isArray(child.material)?child.material:[child.material]){
+        if(material?.userData?.desaturation)material.userData.desaturation.value=Math.max(0,Math.min(1,(1-v)/.78));
+      }
+    });
   }
   focusWinningCells(seen,holdMs=950){
     if(this.focusTimer){clearTimeout(this.focusTimer);this.focusTimer=null}
     for(let c=0;c<LAYOUT.columns;c++)for(let r=0;r<LAYOUT.rows;r++){
       const cell=this.cells[c]?.[r];if(!cell)continue;
-      cell.targetBrightness=seen.has(`${c}:${r}`)?1:0.60;
+      cell.targetBrightness=seen.has(`${c}:${r}`)?1:0.22;
     }
     this.focusTimer=setTimeout(()=>{
       for(let c=0;c<LAYOUT.columns;c++)for(let r=0;r<LAYOUT.rows;r++){const cell=this.cells[c]?.[r];if(cell)cell.targetBrightness=1}
@@ -291,7 +309,7 @@ class SpineSymbolManager{
         console.error(`Spine WIN failed at ${key}`,err);
       }
     }
-    this.eventLog=[`${source}: requested ${seen.size}, played ${played}, missing ${missing}`,`WIN FOCUS: winners 100% · others 60%`,...events].slice(0,20);
+    this.eventLog=[`${source}: requested ${seen.size}, played ${played}, missing ${missing}`,`WIN FOCUS: winners 100% · others 22% + grayscale`,...events].slice(0,20);
     return {requested:seen.size,played,missing};
   }
   animationDuration(cell,name){
@@ -307,7 +325,37 @@ class SpineSymbolManager{
     }
     this.resetCellToIdle(cell);
   }
-  async playCentreCollector(gems,targetPosition){    const target=new THREE.Vector3(targetPosition.x,targetPosition.y,1),fly=[],active=[];    this.focusWinningCells(new Set(gems.map(g=>g.position.join(':'))),1800+gems.length*65);    try{      for(const [i,g] of gems.entries()){        const [c,r]=g.position,cell=this.cells[c]?.[r];if(!cell)continue;        active.push({cell,c,r});        this.prepareAnimationFromFrameZero(cell,'collect');        setRenderLayer(cell.mesh,1000,1);        const start=cell.mesh.position.clone();        fly.push(new Promise(resolve=>setTimeout(()=>{          const began=performance.now();          const frame=now=>{            const t=Math.min(1,(now-began)/650),ease=1-Math.pow(1-t,3);            cell.mesh.position.lerpVectors(start,target,ease);            if(t<1)requestAnimationFrame(frame);else{cell.mesh.visible=false;resolve();}          };          requestAnimationFrame(frame);        },i*65)));      }      await Promise.all(fly);    }finally{      await Promise.all(active.map(async ({cell,c,r})=>{        cell.mesh.position.set(-VIEW_W/2+LAYOUT.cellWidth/2+c*LAYOUT.cellWidth,VIEW_H/2-LAYOUT.cellHeight/2-r*LAYOUT.cellHeight,0);        setRenderLayer(cell.mesh,10,0);        await this.playReturnThenIdle(cell);      }));    }    this.eventLog=[`WHEEL COLLECT: ${gems.length} cash → screen centre; no W required`];  }  forceWinAll(matrix){
+  async playCentreCollector(gems,targetPosition){
+    const target=new THREE.Vector3(targetPosition.x,targetPosition.y,1),fly=[],active=[];
+    this.focusWinningCells(new Set(gems.map(g=>g.position.join(':'))),1800+gems.length*65);
+    try{
+      for(const [i,g] of gems.entries()){
+        const [c,r]=g.position,cell=this.cells[c]?.[r];if(!cell)continue;
+        active.push({cell,c,r});
+        this.prepareAnimationFromFrameZero(cell,'collect');
+        setRenderLayer(cell.mesh,1000,1);
+        const start=cell.mesh.position.clone();
+        fly.push(new Promise(resolve=>setTimeout(()=>{
+          const began=performance.now();
+          const frame=now=>{
+            const t=Math.min(1,(now-began)/650),ease=1-Math.pow(1-t,3);
+            cell.mesh.position.lerpVectors(start,target,ease);
+            if(t<1)requestAnimationFrame(frame);else{cell.mesh.visible=false;resolve();}
+          };
+          requestAnimationFrame(frame);
+        },i*65)));
+      }
+      await Promise.all(fly);
+    }finally{
+      await Promise.all(active.map(async ({cell,c,r})=>{
+        cell.mesh.position.set(-VIEW_W/2+LAYOUT.cellWidth/2+c*LAYOUT.cellWidth,VIEW_H/2-LAYOUT.cellHeight/2-r*LAYOUT.cellHeight,0);
+        setRenderLayer(cell.mesh,10,0);
+        await this.playReturnThenIdle(cell);
+      }));
+    }
+    this.eventLog=[`WHEEL COLLECT: ${gems.length} cash → screen centre; no W required`];
+  }
+  forceWinAll(matrix){
     // Always request the mathematical 4x4, not merely whatever happened to register.
     const ensure=this.ensureMatrix(matrix,'idle');
     const positions=[];for(let c=0;c<LAYOUT.columns;c++)for(let r=0;r<LAYOUT.rows;r++)positions.push([c,r]);
