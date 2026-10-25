@@ -96,3 +96,5 @@ html,body{background:#190009}#game{background:#330014}
 .reel-column.settle{animation:none}
 .prototype-note{position:absolute;left:10%;top:45%;width:80%;text-align:center;color:#ffe397;font-weight:900;font-size:clamp(15px,4cqw,28px);line-height:1.6;z-index:2;text-shadow:0 3px 5px #000}
 #debug label{display:block;margin:8px 0;font-size:12px}#debug-mode{display:block;width:100%;margin:6px 0}#debug-mode-spin{padding:8px;margin-bottom:8px}
+
+.big-win-overlay{position:absolute;inset:0;z-index:25;border:0;padding:0;width:100%;height:100%;background:rgba(10,0,4,.72);cursor:pointer;touch-action:manipulation}.big-win-overlay canvas{display:block;width:100%;height:100%}

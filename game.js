@@ -230,6 +230,9 @@ async function presentSpin(record){
 
 const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
 
+// Optional visual assets must not prevent the game from starting.
+const bigWinReady=import('./presentation/big-win.js').then(({createBigWin})=>{const presentation=createBigWin(game);presentation.preload();return presentation;}).catch(error=>{console.warn('Big-win unavailable:',error.message);return null;});
+const bigWin={async play(...args){if(args[0]<2*args[1]&&!args[2]?.force)return false;const presentation=await Promise.race([bigWinReady,new Promise(resolve=>setTimeout(()=>resolve(null),3000))]);return presentation?presentation.play(...args):false;}};
 let busy=false, autoplayActive=false, autoplayEpoch=0;
 
 function money(v){return Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -307,6 +310,7 @@ async function doSpin(forced=false,mode='D'){
   creditEl.textContent=money((engine.creditCents-(record.forced?0:record.awardCents))/100);
 
   await safelyPresent(record);
+  await bigWin.play(record.awardCents,engine.stakeCents);
 
   engine.completeBase(record.id);
 
@@ -367,6 +371,7 @@ async function startFeature(){
     const record=engine.beginFeatureSpin({mode:debugEnabled?document.querySelector('#debug-feature-mode').value:undefined});
 
     await safelyPresent(record);
+  await bigWin.play(record.awardCents,engine.stakeCents);
 
     engine.completeFeatureSpin(record.id);updateAccount();refreshDebug();
 
@@ -472,3 +477,5 @@ if(!(debugEnabled&&params.get('png')==='1'))spineSymbols.init().then(()=>refresh
 
 setTimeout(()=>audioManager.trySplashAmbient(),80);
 
+
+if(debugEnabled){const button=document.createElement('button');button.textContent='Preview big win (no credit change)';button.addEventListener('click',async()=>{if(busy||engine.state!=='BASE_GAME')return;busy=true;try{await bigWin.play(engine.stakeCents*50,engine.stakeCents,{force:true});}finally{busy=false;}});document.querySelector('#debug').appendChild(button);}

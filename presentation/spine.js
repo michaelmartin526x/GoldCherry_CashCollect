@@ -221,7 +221,7 @@ class SpineSymbolManager{
     if(!cell?.mesh?.skeleton?.color)return;
     const v=Math.max(0,Math.min(1,value));
     cell.mesh.skeleton.color.r=v;cell.mesh.skeleton.color.g=v;cell.mesh.skeleton.color.b=v;
-    for(const mesh of [cell.mesh,cell.backMesh])mesh?.traverse(child=>{
+    for(const mesh of [cell.mesh,cell.backMesh])mesh?.traverse?.(child=>{
       for(const material of Array.isArray(child.material)?child.material:[child.material]){
         if(material?.userData?.desaturation)material.userData.desaturation.value=Math.max(0,Math.min(1,(1-v)/.78));
       }
