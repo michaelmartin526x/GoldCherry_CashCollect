@@ -8,7 +8,7 @@ export function createBigWin(root){
   let assetsPromise,active=false;
   const load=()=>assetsPromise??=Promise.all([
     new FBXLoader().loadAsync('assets/bigwin/Coin.fbx'),
-    new THREE.TextureLoader().loadAsync('assets/bigwin/Reflection_Map.png'),
+    new THREE.TextureLoader().loadAsync('assets/bigwin/Reflection_Map.webp'),
     (async()=>{
       const manager=new spine.AssetManager('assets/bigwin/');
       await manager.loadTextureAtlasAsync('wins.atlas');await manager.loadJsonAsync('wins.json');
@@ -79,7 +79,7 @@ export function createBigWin(root){
       await new Promise((resolve,reject)=>{
         const tick=now=>{try{
           const dt=Math.min(.05,(now-last)/1000);last=now;animationTime+=dt;const t=animationTime;
-          const progress=skip?1:Math.min(1,Math.max(0,(t-introDuration)/3.3));
+          const progress=skip?1:Math.min(1,Math.max(0,t/3.3));
           const shown=Math.round(amountCents*(1-(1-progress)**2));
           if(shown!==lastAmount){lastAmount=shown;context.clearRect(0,0,1024,256);context.textAlign='center';context.textBaseline='middle';context.font='900 160px Arial';context.lineWidth=10;context.strokeStyle='#3b1700';context.fillStyle='#fff8c8';const text=(shown/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});context.strokeText(text,512,128,960);context.fillText(text,512,128,960);numberTexture.needsUpdate=true;overlay.setAttribute('aria-label',`Big win ${(shown/100).toFixed(2)}. Click to finish counting.`);}
           if(!outroQueued&&t>introDuration+.3&&(skip||t>introDuration+4)){

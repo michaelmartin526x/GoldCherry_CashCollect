@@ -231,7 +231,7 @@ async function presentSpin(record){
 const wait = ms => new Promise(resolve => setTimeout(resolve,ms));
 
 // Optional visual assets must not prevent the game from starting.
-const bigWinReady=import('./presentation/big-win.js').then(({createBigWin})=>{const presentation=createBigWin(game);presentation.preload();return presentation;}).catch(error=>{console.warn('Big-win unavailable:',error.message);return null;});
+const bigWinReady=import('./presentation/big-win.js').then(({createBigWin})=>{const presentation=createBigWin(game);return presentation;}).catch(error=>{console.warn('Big-win unavailable:',error.message);return null;});
 const bigWin={async play(...args){if(args[0]<2*args[1]&&!args[2]?.force)return false;const presentation=await Promise.race([bigWinReady,new Promise(resolve=>setTimeout(()=>resolve(null),3000))]);return presentation?presentation.play(...args):false;}};
 let busy=false, autoplayActive=false, autoplayEpoch=0;
 
@@ -256,6 +256,7 @@ function setScreen(el,on){el.classList.toggle('active',on)}
 function stopAutoplay(){autoplayActive=false;autoplayEpoch++;document.querySelector('#autoplay').classList.remove('active')}
 
 function showBase(){
+  document.documentElement.classList.remove('splash-open');
 
   game.classList.remove('feature-mode');
 
@@ -330,7 +331,7 @@ async function doSpin(forced=false,mode='D'){
 
     engine.showFeatureEntry();
 
-    featureEntryPanel.src=`assets/free/Enter_FreeSpins_Panel_${engine.pendingFreeSpins}.png`;
+    featureEntryPanel.src=`assets/free/Enter_FreeSpins_Panel_${engine.pendingFreeSpins}.webp`;
 
     setScreen(featureEntry,true);busy=false;
 
@@ -395,7 +396,7 @@ function continueAction(){
 
   if(busy)return;
 
-  if(engine.enterBase()){audioManager.enterBase();showBase()}
+  if(engine.enterBase()){audioManager.enterBase();showBase();bigWinReady.then(presentation=>presentation?.preload());}
 
   else if(engine.state==='FEATURE_ENTRY')startFeature();
 
@@ -443,7 +444,10 @@ document.querySelector('#autoplay').addEventListener('click',()=>{
 
 });
 
-for(const screen of [splash,featureEntry,featureComplete])screen.addEventListener('click',continueAction);
+for(const screen of [featureEntry,featureComplete])screen.addEventListener('click',continueAction);
+addEventListener('splash-request',continueAction);
+document.documentElement.dataset.gameReady='1';
+if(document.documentElement.dataset.startRequested==='1')continueAction();
 
 addEventListener('keydown',e=>{
 
